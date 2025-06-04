@@ -18,11 +18,9 @@ const { protect, authorize } = require("../middlewares/auth.middleware");
 
 router.use(protect);
 
-// Public for logged-in users
 router.get("/", getAllPolls);
 router.get("/:id", getPollById);
 
-// Admin only
 router.post("/", authorize(["admin"]), createPoll);
 router.put("/:id", authorize(["admin"]), updatePoll);
 router.delete("/:id", authorize(["admin"]), deletePoll);
@@ -31,8 +29,7 @@ router.patch("/:id/unlock", authorize(["admin"]), unlockPoll);
 router.post("/:id/options", authorize(["admin"]), addOption);
 router.delete("/:pollId/options/:optionId", authorize(["admin"]), removeOption);
 
-// User vote
-router.post("/:pollId/vote/:optionId", authorize(["user"]), votePoll); // Sửa vote thành votePoll
-router.post("/:pollId/unvote/:optionId", authorize(["user"]), unvotePoll); // Sửa unvote thành unvotePoll
+router.post("/:pollId/vote/:optionId", authorize(["user","admin"]), votePoll); 
+router.post("/:pollId/unvote/:optionId", authorize(["user","admin"]), unvotePoll); 
 
 module.exports = router;

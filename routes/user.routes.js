@@ -9,11 +9,11 @@ const {
 
 const { protect, authorize } = require("../middlewares/auth.middleware");
 
-router.use(protect); // all below need login
+router.use(protect);
 
-router.get("/", authorize(["admin"]), getAllUsers); // admin only
+router.get("/", authorize(["admin"]), getAllUsers);
 router.get("/me", getProfile);
 router.put("/me", updateProfile);
-router.delete("/:id", authorize(["admin"]), deleteUser); // admin only
+router.delete("/:id", authorize(["admin"]), deleteUser); 
 
 module.exports = router;

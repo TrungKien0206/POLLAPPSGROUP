@@ -71,7 +71,6 @@ exports.getPollById = async (req, res) => {
     );
     poll.totalVotes = totalVotes;
 
-    // Optional: set each option votes count
     poll.options = poll.options.map((opt) => ({
       ...opt,
       votes: opt.userVote.length,
@@ -105,18 +104,18 @@ exports.deletePoll = async (req, res) => {
 
 exports.votePoll = async (req, res) => {
   try {
-    const { optionId } = req.body;
-    const poll = await Poll.findById(req.params.id);
+    const { pollId, optionId } = req.params;
+
+    const poll = await Poll.findById(pollId);
 
     if (!poll) return error(res, "Poll not found", 404);
     if (poll.isLocked) return error(res, "Poll is locked", 403);
 
-    // Check expiration
     if (poll.expiresAt && new Date(poll.expiresAt) < new Date()) {
       return error(res, "Poll has expired", 403);
     }
 
-    // Check if user already voted
+    // Kiểm tra user đã vote option nào trong poll chưa
     for (let opt of poll.options) {
       if (opt.userVote.includes(req.user._id)) {
         return error(res, "You have already voted");
@@ -127,7 +126,6 @@ exports.votePoll = async (req, res) => {
     if (!option) return error(res, "Option not found", 404);
 
     option.userVote.push(req.user._id);
-    // Optional: Update votes count field if you keep it
     option.votes = option.userVote.length;
 
     await poll.save();
@@ -142,17 +140,27 @@ exports.votePoll = async (req, res) => {
   }
 };
 
+
 exports.unvotePoll = async (req, res) => {
   try {
-    const poll = await Poll.findById(req.params.id);
+    const { pollId, optionId } = req.params;
+
+    const poll = await Poll.findById(pollId);
     if (!poll) return error(res, "Poll not found", 404);
 
-    for (let opt of poll.options) {
-      opt.userVote = opt.userVote.filter(
-        (uid) => uid.toString() !== req.user._id.toString()
-      );
-      opt.votes = opt.userVote.length;
+    const option = poll.options.id(optionId);
+    if (!option) return error(res, "Option not found", 404);
+
+    // Kiểm tra user đã vote option này chưa, nếu chưa vote thì báo lỗi
+    if (!option.userVote.includes(req.user._id)) {
+      return error(res, "You have not voted this option");
     }
+
+    // Bỏ vote user trong option
+    option.userVote = option.userVote.filter(
+      (uid) => uid.toString() !== req.user._id.toString()
+    );
+    option.votes = option.userVote.length;
 
     await poll.save();
 
@@ -165,6 +173,7 @@ exports.unvotePoll = async (req, res) => {
     error(res, err.message);
   }
 };
+
 
 exports.lockPoll = async (req, res) => {
   try {
